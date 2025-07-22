@@ -19,6 +19,7 @@ import (
 	"google.golang.org/api/youtube/v3"
 	"google.golang.org/api/youtubeanalytics/v2"
 	"google.golang.org/api/youtubereporting/v1"
+	// _ "modernc.org/sqlite" // Pure Go SQLite driver
 )
 
 // Config holds application configuration from environment variables
