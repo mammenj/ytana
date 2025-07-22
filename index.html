@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YouTube Analytics & Search</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- HTMX CDN -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <!-- Alpine.js CDN -->
+    <script src="https://unpkg.com/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f3f4f6;
+        color: #333;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+      .card {
+        background-color: #fff;
+        border-radius: 0.75rem; /* rounded-lg */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* shadow-md */
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem; /* rounded-md */
+        font-weight: 600; /* font-semibold */
+        transition:
+          background-color 0.2s ease-in-out,
+          transform 0.1s ease-in-out;
+        cursor: pointer;
+      }
+      .btn-primary {
+        background-color: #3b82f6; /* blue-500 */
+        color: #fff;
+      }
+      .btn-primary:hover {
+        background-color: #2563eb; /* blue-600 */
+        transform: translateY(-1px);
+      }
+      .btn-secondary {
+        background-color: #6b7280; /* gray-500 */
+        color: #fff;
+      }
+      .btn-secondary:hover {
+        background-color: #4b5563; /* gray-600 */
+        transform: translateY(-1px);
+      }
+      input[type="text"],
+      textarea {
+        border: 1px solid #d1d5db; /* border-gray-300 */
+        border-radius: 0.5rem; /* rounded-md */
+        padding: 0.75rem 1rem;
+        width: 100%;
+        box-sizing: border-box;
+        transition:
+          border-color 0.2s ease-in-out,
+          box-shadow 0.2s ease-in-out;
+      }
+      input[type="text"]:focus,
+      textarea:focus {
+        border-color: #3b82f6; /* blue-500 */
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25); /* ring-blue-500/25 */
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100 min-h-screen flex flex-col">
+    <header class="bg-white shadow-md py-4">
+      <div class="container flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-gray-800">YouTube Insights</h1>
+        <nav>
+          <ul class="flex space-x-6">
+            <li>
+              <a
+                href="#search-section"
+                class="text-gray-700 hover:text-blue-600 font-medium"
+                >Search</a
+              >
+            </li>
+            <li>
+              <a
+                href="#business-section"
+                class="text-gray-700 hover:text-blue-600 font-medium"
+                >Business</a
+              >
+            </li>
+            <li>
+              <a
+                href="#creator-section"
+                class="text-gray-700 hover:text-blue-600 font-medium"
+                >Creator</a
+              >
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main class="flex-grow container py-8">
+      <!-- YouTube Search Section -->
+      <section id="search-section" class="card">
+        <h2 class="text-2xl font-bold mb-6 text-gray-800">
+          YouTube Video Search
+        </h2>
+        <form
+          hx-get="/search"
+          hx-target="#search-results"
+          hx-swap="innerHTML"
+          class="flex space-x-4 mb-6"
+        >
+          <input
+            type="text"
+            name="q"
+            placeholder="Search for videos..."
+            class="flex-grow"
+          />
+          <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+        <div id="search-results" class="space-y-4">
+          <!-- Search results will be loaded here by HTMX -->
+          <p class="text-gray-600">
+            Enter a query above to search YouTube videos.
+          </p>
+        </div>
+      </section>
+
+      <!-- Business Analytics Section -->
+      <section id="business-section" class="card" x-data="{ loaded: false }">
+        <h2 class="text-2xl font-bold mb-6 text-gray-800">
+          Business Analytics Dashboard
+        </h2>
+        <div id="business-analytics-content">
+          <p class="text-gray-700 mb-4">
+            View high-level channel performance metrics relevant for businesses.
+          </p>
+          <button
+            x-on:click="loaded = true"
+            hx-get="/business"
+            hx-target="#business-analytics-content"
+            hx-swap="innerHTML"
+            hx-trigger="click once"
+            class="btn btn-secondary"
+          >
+            Load Business Analytics
+          </button>
+        </div>
+      </section>
+
+      <!-- Content Creator Analytics Section -->
+      <section id="creator-section" class="card" x-data="{ loaded: false }">
+        <h2 class="text-2xl font-bold mb-6 text-gray-800">
+          Content Creator Dashboard
+        </h2>
+        <div id="creator-analytics-content">
+          <p class="text-gray-700 mb-4">
+            Access detailed reports for content creators, including video
+            performance and audience insights.
+          </p>
+          <button
+            x-on:click="loaded = true"
+            hx-get="/creator"
+            hx-target="#creator-analytics-content"
+            hx-swap="innerHTML"
+            hx-trigger="click once"
+            class="btn btn-secondary"
+          >
+            Load Creator Analytics
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white py-6 mt-auto">
+      <div class="container text-center text-sm">
+        <p>&copy; 2025 YouTube Insights App. All rights reserved.</p>
+        <p class="mt-2">
+          Powered by YouTube Data, Analytics, and Reporting APIs.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
