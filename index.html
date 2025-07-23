@@ -53,7 +53,7 @@
         <form hx-get="/search" hx-target="#search-results" hx-swap="innerHTML" class="flex gap-2">
           <input type="text" name="q" placeholder="Search for videos..." class="input input-bordered flex-grow" /> <!-- DaisyUI Input -->
           <button type="submit" class="btn btn-primary">Search</button> <!-- DaisyUI Button -->
-        </form>
+       </form>
         <div id="search-results" class="mt-4">
           <p class="text-base-content">Enter a query above to search YouTube videos.</p>
         </div>
@@ -91,7 +91,7 @@
           </button>
           {{ else }}
           <button hx-get="/auth/google/login" hx-target="body" hx-swap="outerHTML" hx-push-url="true" class="btn btn-secondary">
-            Authenticate for Creator Analytics
+           Authenticate for Creator Analytics
           </button>
           {{ end }}
         </div>

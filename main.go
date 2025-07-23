@@ -199,7 +199,7 @@ func handleYouTubeSearch(w http.ResponseWriter, r *http.Request) {
 func handleGoogleLogin(w http.ResponseWriter, r *http.Request) {
 	// Generate a random state string to prevent CSRF attacks
 	state := "random-state-string" // In a real app, generate a cryptographically secure random string and store it in a session.
-	url := oauth2Config.AuthCodeURL(state, oauth2.AccessTypeOnline, oauth2.SetAuthURLParam("prompt", "consent"))
+	url := oauth2Config.AuthCodeURL(state, oauth2.AccessTypeOffline, oauth2.SetAuthURLParam("prompt", "consent"))
 	log.Printf("Redirecting to Google for OAuth: %s", url)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
@@ -477,10 +477,17 @@ func handleCreatorAnalytics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// --- NEW LOGGING FOR AVAILABLE REPORT TYPES ---
+	log.Printf("handleCreatorAnalytics: Available report types for user %s:", userID)
+	for _, rt := range reportTypesResp.ReportTypes {
+		log.Printf("  - ID: %s, Name: %s", rt.Id, rt.Name)
+	}
+	// --- END NEW LOGGING ---
+
 	var desiredReportTypeID string
 	// Find a suitable report type, e.g., "channel_basic_a2" for basic channel activity
 	for _, rt := range reportTypesResp.ReportTypes {
-		if rt.Id == "channel_basic_a2" { // Example report type for basic channel activity
+		if rt.Id == "channel_basic_a3" { // Example report type for basic channel activity
 			desiredReportTypeID = rt.Id
 			break
 		}
@@ -488,7 +495,7 @@ func handleCreatorAnalytics(w http.ResponseWriter, r *http.Request) {
 
 	if desiredReportTypeID == "" {
 		log.Printf("handleCreatorAnalytics: Could not find desired report type 'channel_basic_a2' for user %s. Available types: %s", userID, getReportTypeIDs(reportTypesResp))
-		http.Error(w, "Could not find a suitable report type (e.g., 'channel_basic_a2'). Ensure your channel has reporting jobs enabled or is eligible for this report type.", http.StatusInternalServerError)
+		http.Error(w, "Could not find a suitable report type (e.g., 'channel_basic_a2'). Ensure your channel has reporting jobs enabled or is eligible for this report type. Check server logs for available types.", http.StatusInternalServerError)
 		return
 	}
 
