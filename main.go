@@ -201,7 +201,9 @@ func handleGoogleLogin(w http.ResponseWriter, r *http.Request) {
 	state := "random-state-string" // In a real app, generate a cryptographically secure random string and store it in a session.
 	url := oauth2Config.AuthCodeURL(state, oauth2.AccessTypeOffline, oauth2.SetAuthURLParam("prompt", "consent"))
 	log.Printf("Redirecting to Google for OAuth: %s", url)
-	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+	// http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+	w.Header().Set("HX-Redirect", url)
+	w.WriteHeader(http.StatusOK)
 }
 
 // handleGoogleCallback handles the redirect from Google after user authorization
@@ -221,6 +223,7 @@ func handleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Authorization code not found", http.StatusBadRequest)
 		return
 	}
+
 	log.Println("handleGoogleCallback: Authorization code received.")
 
 	token, err := oauth2Config.Exchange(context.Background(), code)
@@ -558,7 +561,6 @@ func handleCreatorAnalytics(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `<p class="text-gray-600">No reports available for the selected period. It might take some time (24-48 hours) for reports to be generated after a job is created. Ensure your Google account has a YouTube channel and that it is active.</p>`)
 		return
 	}
-
 	// For simplicity, we'll just display links to the report URLs.
 	// In a real application, you would download the CSV/JSON report from these URLs and parse them.
 	fmt.Fprintf(w, `<p class="text-gray-700 mb-2">Available Reports (click to download):</p>`)
