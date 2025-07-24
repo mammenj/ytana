@@ -75,7 +75,7 @@
     </div>
   </div>
 </header>
-  <main class="flex-grow container mx-auto py-8">
+  <main class="flex-grow container mx-auto py-8 px-4">
 
     <!-- Display authenticated user ID if available -->
     {{ if .UserID }}
@@ -91,12 +91,13 @@
     {{ end }}
 
     <!-- YouTube Search Section (DaisyUI Card) -->
-    <section class="card bg-base-100 shadow-xl mb-8"> <!-- DaisyUI Card -->
+    <section id="search-section" class="card bg-base-100 shadow-xl mb-8"> <!-- DaisyUI Card -->
       <div class="card-body">
         <h2 class="card-title">YouTube Video Search</h2> <!-- DaisyUI Card Title -->
-        <form hx-get="/search" hx-target="#search-results" hx-swap="innerHTML" class="flex gap-2">
+        <form hx-get="/search" hx-target="#search-results" hx-swap="innerHTML" class="flex flex-col sm:flex-row gap-2" hx-indicator="#search-spinner">
           <input type="text" name="q" placeholder="Search for videos..." class="input input-bordered flex-grow" /> <!-- DaisyUI Input -->
           <button type="submit" class="btn btn-primary">Search</button> <!-- DaisyUI Button -->
+          <span id="search-spinner" class="htmx-indicator loading loading-spinner ml-2"></span>
        </form>
         <div id="search-results" class="mt-4">
           <p class="text-base-content">Enter a query above to search YouTube videos.</p>
@@ -105,38 +106,42 @@
     </section>
 
     <!-- Business Analytics Section (DaisyUI Card) -->
-    <section class="card bg-base-100 shadow-xl mb-8"> <!-- DaisyUI Card -->
+    <section id="business-section" class="card bg-base-100 shadow-xl mb-8"> <!-- DaisyUI Card -->
       <div class="card-body">
         <h2 class="card-title">Business Analytics Dashboard</h2> <!-- DaisyUI Card Title -->
         <div id="business-analytics-content">
           <p class="mb-4">View high-level channel performance metrics relevant for businesses.</p>
           {{ if .UserID }}
-          <button hx-get="/business" hx-target="#business-analytics-content" hx-swap="innerHTML" hx-trigger="click" class="btn btn-secondary">
+          <button hx-get="/business" hx-target="#business-analytics-content" hx-swap="innerHTML" hx-trigger="click" class="btn btn-secondary" hx-indicator="#business-spinner">
             Load Business Analytics
           </button>
+          <span id="business-spinner" class="htmx-indicator loading loading-spinner ml-2"></span>
           {{ else }}
-          <button hx-get="/auth/google/login" hx-target="body" hx-swap="outerHTML" hx-push-url="true" class="btn btn-secondary">
+          <button hx-get="/auth/google/login" hx-target="body" hx-swap="outerHTML" hx-push-url="true" class="btn btn-secondary" hx-indicator="#business-auth-spinner">
             Authenticate for Business Analytics
           </button>
+          <span id="business-auth-spinner" class="htmx-indicator loading loading-spinner ml-2"></span>
           {{ end }}
         </div>
       </div>
     </section>
 
     <!-- Content Creator Analytics Section (DaisyUI Card) -->
-    <section class="card bg-base-100 shadow-xl"> <!-- DaisyUI Card -->
+    <section id="creator-section" class="card bg-base-100 shadow-xl"> <!-- DaisyUI Card -->
       <div class="card-body">
         <h2 class="card-title">Content Creator Dashboard</h2> <!-- DaisyUI Card Title -->
         <div id="creator-analytics-content">
           <p class="mb-4">Access detailed reports for content creators, including video performance and audience insights.</p>
           {{ if .UserID }}
-          <button hx-get="/creator" hx-target="#creator-analytics-content" hx-swap="innerHTML" hx-trigger="click" class="btn btn-secondary">
+          <button hx-get="/creator" hx-target="#creator-analytics-content" hx-swap="innerHTML" hx-trigger="click" class="btn btn-secondary" hx-indicator="#creator-spinner">
             Load Creator Analytics
           </button>
+          <span id="creator-spinner" class="htmx-indicator loading loading-spinner ml-2"></span>
           {{ else }}
-          <button hx-get="/auth/google/login" hx-target="body" hx-swap="outerHTML" hx-push-url="true" class="btn btn-secondary">
+          <button hx-get="/auth/google/login" hx-target="body" hx-swap="outerHTML" hx-push-url="true" class="btn btn-secondary" hx-indicator="#creator-auth-spinner">
            Authenticate for Creator Analytics
           </button>
+          <span id="creator-auth-spinner" class="htmx-indicator loading loading-spinner ml-2"></span>
           {{ end }}
         </div>
       </div>

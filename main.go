@@ -117,7 +117,7 @@ func NewApp() (*App, error) {
 		Endpoint: google.Endpoint,
 	}
 
-	templates, err := template.ParseFiles("index.html", "search_results.html", "analytics_table.html")
+	templates, err := template.ParseFiles("index.html", "search_results.html", "analytics_table.html", "creator_analytics.html")
 	if err != nil {
 		return nil, fmt.Errorf("error parsing templates: %v", err)
 	}
@@ -454,6 +454,16 @@ func (a *App) handleBusinessAnalytics(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type CreatorAnalyticsData struct {
+	Reports     []*youtubereporting.Report
+	ReportLinks []struct {
+		URL       string
+		ID        string
+		StartDate string
+		EndDate   string
+	}
+}
+
 func (a *App) handleCreatorAnalytics(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(string)
 	client := r.Context().Value("authenticated_client").(*http.Client)
@@ -537,15 +547,10 @@ func (a *App) handleCreatorAnalytics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/html")
-	fmt.Fprintf(w, `<h2 class="text-xl font-bold mb-4 text-gray-800">Content Creator Analytics (Last 7 Days)</h2>`)
-
-	if reportsResp.Reports == nil || len(reportsResp.Reports) == 0 {
-		fmt.Fprintf(w, `<p class="text-gray-600">No reports available for the selected period. It might take some time (24-48 hours) for reports to be generated after a job is created. Ensure your Google account has a YouTube channel and that it is active.</p>`)
-		return
+	data := CreatorAnalyticsData{
+		Reports: reportsResp.Reports,
 	}
-	fmt.Fprintf(w, `<p class="text-gray-700 mb-2">Available Reports (click to download):</p>`)
-	fmt.Fprintf(w, `<ul class="list-disc pl-5 space-y-2">`)
+
 	for _, report := range reportsResp.Reports {
 		parsedStartTime, err := time.Parse(time.RFC3339, report.StartTime)
 		if err != nil {
@@ -557,13 +562,24 @@ func (a *App) handleCreatorAnalytics(w http.ResponseWriter, r *http.Request) {
 			log.Printf("handleCreatorAnalytics: Error parsing report EndTime '%s': %v", report.EndTime, err)
 			parsedEndTime = time.Time{}
 		}
-
-		fmt.Fprintf(w, `<li><a href="%s" target="_blank" class="text-blue-600 hover:underline">%s (Start: %s, End: %s)</a></li>`,
-			report.DownloadUrl, report.Id, parsedStartTime.Format("2006-01-02"), parsedEndTime.Format("2006-01-02"))
+		data.ReportLinks = append(data.ReportLinks, struct {
+			URL       string
+			ID        string
+			StartDate string
+			EndDate   string
+		}{
+			URL:       report.DownloadUrl,
+			ID:        report.Id,
+			StartDate: parsedStartTime.Format("2006-01-02"),
+			EndDate:   parsedEndTime.Format("2006-01-02"),
+		})
 	}
-	fmt.Fprintf(w, `</ul>`)
 
-	fmt.Fprintf(w, `<p class="text-gray-700 mt-4">Note: YouTube Reporting API provides reports as downloadable files (e.g., CSV). You would typically download and parse these files to display detailed metrics.</p>`)
+	w.Header().Set("Content-Type", "text/html")
+	err = a.templates.ExecuteTemplate(w, "creator_analytics.html", data)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error executing template: %v", err), http.StatusInternalServerError)
+	}
 }
 
 func getReportTypeIDs(resp *youtubereporting.ListReportTypesResponse) string {

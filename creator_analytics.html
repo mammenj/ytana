@@ -1,0 +1,13 @@
+<h2 class="text-xl font-bold mb-4 text-gray-800">Content Creator Analytics (Last 7 Days)</h2>
+
+{{if not .Reports}}
+    <p class="text-gray-600">No reports available for the selected period. It might take some time (24-48 hours) for reports to be generated after a job is created. Ensure your Google account has a YouTube channel and that it is active.</p>
+{{else}}
+    <p class="text-gray-700 mb-2">Available Reports (click to download):</p>
+    <ul class="list-disc pl-5 space-y-2">
+    {{range .ReportLinks}}
+        <li><a href="{{.URL}}" target="_blank" class="text-blue-600 hover:underline">{{.ID}} (Start: {{.StartDate}}, End: {{.EndDate}})</a></li>
+    {{end}}
+    </ul>
+{{end}}
+<p class="text-gray-700 mt-4">Note: YouTube Reporting API provides reports as downloadable files (e.g., CSV). You would typically download and parse these files to display detailed metrics.</p>
