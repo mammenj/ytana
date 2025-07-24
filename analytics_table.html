@@ -1,0 +1,23 @@
+<h2 class="text-xl font-bold mb-4 text-gray-800">Business Analytics (Last 30 Days)</h2>
+{{if .Rows}}
+<div class="overflow-x-auto"><table class="min-w-full bg-white rounded-lg shadow-md">
+    <thead>
+        <tr class="bg-gray-100 text-left text-gray-600 uppercase text-sm leading-normal">
+            <th class="py-3 px-6">Date</th>
+            <th class="py-3 px-6">Views</th>
+            <th class="py-3 px-6">Subscribers Gained</th>
+        </tr>
+    </thead>
+    <tbody class="text-gray-700 text-sm">
+        {{range .Rows}}
+        <tr class="border-b border-gray-200 hover:bg-gray-50">
+            <td class="py-3 px-6">{{index . 0}}</td>
+            <td class="py-3 px-6">{{printf "%.0f" (index . 1)}}</td>
+            <td class="py-3 px-6">{{printf "%.0f" (index . 2)}}</td>
+        </tr>
+        {{end}}
+    </tbody>
+</table></div>
+{{else}}
+<p class="text-gray-600">No data available for the selected period. Ensure your Google account has a YouTube channel associated with it and that it has analytics data.</p>
+{{end}}
