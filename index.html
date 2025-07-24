@@ -1,161 +1,174 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark"> <!-- DaisyUI theme -->
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>YouTube Analytics & Search</title>
-  <!-- Include Tailwind CSS (DaisyUI requires Tailwind) -->
-  
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
-<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-  <!-- Include DaisyUI CDN (after Tailwind) -->
-  <!-- HTMX CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.6/dist/htmx.min.js" integrity="sha384-Akqfrbj/HpNVo8k11SXBb6TlBWmXXlYQrCSqEWmyKJe+hDm3Z/B2WVG4smwBkRVm" crossorigin="anonymous"></script>
-   
-  <!-- Alpine.js CDN (if needed) -->
- <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <title>YouTube Insights - SaaS Analytics Platform</title>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.6/dist/htmx.min.js" integrity="sha384-Akqfrbj/HpNVo8k11SXBb6TlBWmXXlYQrCSqEWmyKJe+hDm3Z/B2WVG4smwBkRVm" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="min-h-screen flex flex-col bg-base-200"> <!-- DaisyUI base color -->
-<!-- Enhanced DaisyUI Navbar with Dark Mode Support -->
-<header class="navbar bg-base-100 shadow-md sticky top-0 z-50">
-  <div class="container mx-auto px-4">
-    <div class="flex-1">
-      <a class="btn btn-ghost text-xl font-bold tracking-tight">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-6 h-6 mr-2 fill-current">
-          <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
-        </svg>
-        YouTube Insights
-      </a>
-    </div>
-    
-    <div class="flex-none hidden lg:block">
-      <ul class="menu menu-horizontal px-1 space-x-2">
-        <li>
-          <a href="#search-section" class="rounded-btn hover:bg-base-200 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            Search
-          </a>
-        </li>
-        <li>
-          <a href="#business-section" class="rounded-btn hover:bg-base-200 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-            Business
-          </a>
-        </li>
-        <li>
-          <a href="#creator-section" class="rounded-btn hover:bg-base-200 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            Creator
-          </a>
-        </li>
+<body class="min-h-screen flex flex-col bg-base-200 font-sans">
+
+<!-- Navbar -->
+<header class="navbar bg-base-100 shadow-lg sticky top-0 z-50 px-4">
+  <div class="flex-1">
+    <a class="btn btn-ghost text-2xl font-bold tracking-tight text-primary">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-7 h-7 mr-2 fill-current">
+        <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+      </svg>
+      YouTube Insights
+    </a>
+  </div>
+  <div class="flex-none">
+    <ul class="menu menu-horizontal px-1 space-x-2 hidden lg:flex">
+      <li><a href="#features" class="btn btn-ghost">Features</a></li>
+      <li><a href="#cta" class="btn btn-ghost">Get Started</a></li>
+    </ul>
+    <div class="dropdown dropdown-end lg:hidden">
+      <label tabindex="0" class="btn btn-ghost rounded-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+      </label>
+      <ul tabindex="0" class="menu menu-compact dropdown-content mt-3 p-2 shadow bg-base-100 rounded-box w-52">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#cta">Get Started</a></li>
       </ul>
-    </div>
-    
-    <!-- Mobile menu button -->
-    <div class="flex-none lg:hidden">
-      <div class="dropdown dropdown-end">
-        <label tabindex="0" class="btn btn-ghost rounded-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </label>
-        <!-- Fixed: Added bg-base-100 class to dropdown content -->
-        <ul tabindex="0" class="menu menu-compact dropdown-content mt-3 p-2 shadow bg-base-100 rounded-box w-52 text-center">
-          <li><a href="#search-section">Search</a></li>
-          <li><a href="#business-section">Business</a></li>
-          <li><a href="#creator-section">Creator</a></li>
-        </ul>
-      </div>
     </div>
   </div>
 </header>
-  <main class="flex-grow container mx-auto py-8 px-4">
 
-    <!-- Display authenticated user ID if available -->
+<!-- Main Content -->
+<main class="flex-grow">
+  <!-- Hero Section -->
+  <section class="hero min-h-[60vh] bg-base-100 text-center">
+    <div class="hero-content">
+      <div>
+        <h1 class="text-5xl font-bold leading-tight">Unlock Your YouTube Potential</h1>
+        <p class="py-6 text-lg max-w-2xl mx-auto">Powerful analytics for creators and businesses. Search, analyze, and grow your audience with data-driven insights.</p>
+        <a href="#cta" class="btn btn-primary btn-lg">Get Started for Free</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- User Authentication Status -->
+  <div class="container mx-auto py-6 px-4">
     {{ if .UserID }}
-    <div role="alert" class="alert alert-info mb-4 rounded-lg"> <!-- DaisyUI Alert -->
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-      <span>Authenticated User ID: <span class="font-semibold">{{ .UserID }}</span></span>
+    <div role="alert" class="alert alert-success shadow-md rounded-lg">
+      <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+      <span>Welcome! You are authenticated. User ID: <span class="font-semibold">{{ .UserID }}</span></span>
     </div>
     {{ else }}
-    <div role="alert" class="alert alert-warning mb-4 rounded-lg"> <!-- DaisyUI Alert -->
-      <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-      <span>Please authenticate to view analytics. Click 'Authenticate for Business Analytics' or 'Authenticate for Creator Analytics' to begin.</span>
+    <div role="alert" class="alert alert-info shadow-md rounded-lg">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+      <span>To access your dashboards, please authenticate below.</span>
     </div>
     {{ end }}
+  </div>
 
-    <!-- YouTube Search Section (DaisyUI Card) -->
-    <section id="search-section" class="card bg-base-100 shadow-xl mb-8"> <!-- DaisyUI Card -->
-      <div class="card-body">
-        <h2 class="card-title">YouTube Video Search</h2> <!-- DaisyUI Card Title -->
-        <form hx-get="/search" hx-target="#search-results" hx-swap="innerHTML" class="flex flex-col sm:flex-row gap-2" hx-indicator="#search-spinner">
-          <input type="text" name="q" placeholder="Search for videos..." class="input input-bordered flex-grow" /> <!-- DaisyUI Input -->
-          <button type="submit" class="btn btn-primary">Search</button> <!-- DaisyUI Button -->
-          <span id="search-spinner" class="htmx-indicator loading loading-spinner ml-2"></span>
-       </form>
-        <div id="search-results" class="mt-4">
-          <p class="text-base-content">Enter a query above to search YouTube videos.</p>
+  <!-- Features Section -->
+  <section id="features" class="py-20 bg-base-200">
+    <div class="container mx-auto px-4 text-center">
+      <h2 class="text-4xl font-bold mb-2">Powerful Tools for Growth</h2>
+      <p class="text-lg mb-12 text-base-content/80">Everything you need to succeed on YouTube.</p>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Feature 1: Search -->
+        <div class="card bg-base-100 shadow-xl transform hover:-translate-y-2 transition-transform duration-300">
+          <div class="card-body items-center text-center">
+            <div class="p-4 bg-primary rounded-full">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary-content" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            </div>
+            <h3 class="card-title text-2xl mt-4">Video Search</h3>
+            <p>Find any public YouTube video instantly. Perfect for research and competitor analysis.</p>
+            <div id="search-tool" class="w-full mt-4">
+              <form hx-get="/search" hx-target="#search-results" hx-swap="innerHTML" class="flex gap-2" hx-indicator="#search-spinner">
+                <input type="text" name="q" placeholder="Search for videos..." class="input input-bordered w-full" />
+                <button type="submit" class="btn btn-primary">Go</button>
+              </form>
+              <span id="search-spinner" class="htmx-indicator loading loading-spinner ml-2"></span>
+              <div id="search-results" class="mt-4 text-left"></div>
+            </div>
+          </div>
+        </div>
+        <!-- Feature 2: Business Analytics -->
+        <div class="card bg-base-100 shadow-xl transform hover:-translate-y-2 transition-transform duration-300">
+          <div class="card-body items-center text-center">
+            <div class="p-4 bg-secondary rounded-full">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-secondary-content" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+            </div>
+            <h3 class="card-title text-2xl mt-4">Business Analytics</h3>
+            <p>High-level channel metrics to track performance and make strategic decisions.</p>
+            <div id="business-analytics-content" class="w-full mt-4">
+              {{ if .UserID }}
+              <button hx-get="/business" hx-target="#business-analytics-content" hx-swap="innerHTML" class="btn btn-secondary" hx-indicator="#business-spinner">Load Dashboard</button>
+              <span id="business-spinner" class="htmx-indicator loading loading-spinner ml-2"></span>
+              {{ else }}
+              <a href="#cta" class="btn btn-secondary">Authenticate to View</a>
+              {{ end }}
+            </div>
+          </div>
+        </div>
+        <!-- Feature 3: Creator Tools -->
+        <div class="card bg-base-100 shadow-xl transform hover:-translate-y-2 transition-transform duration-300">
+          <div class="card-body items-center text-center">
+            <div class="p-4 bg-accent rounded-full">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-accent-content" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+            </div>
+            <h3 class="card-title text-2xl mt-4">Creator Dashboard</h3>
+            <p>In-depth video performance, audience insights, and personalized recommendations.</p>
+            <div id="creator-analytics-content" class="w-full mt-4">
+              {{ if .UserID }}
+              <button hx-get="/creator" hx-target="#creator-analytics-content" hx-swap="innerHTML" class="btn btn-accent" hx-indicator="#creator-spinner">Load Dashboard</button>
+              <span id="creator-spinner" class="htmx-indicator loading loading-spinner ml-2"></span>
+              {{ else }}
+              <a href="#cta" class="btn btn-accent">Authenticate to View</a>
+              {{ end }}
+            </div>
+          </div>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- Business Analytics Section (DaisyUI Card) -->
-    <section id="business-section" class="card bg-base-100 shadow-xl mb-8"> <!-- DaisyUI Card -->
-      <div class="card-body">
-        <h2 class="card-title">Business Analytics Dashboard</h2> <!-- DaisyUI Card Title -->
-        <div id="business-analytics-content">
-          <p class="mb-4">View high-level channel performance metrics relevant for businesses.</p>
-          {{ if .UserID }}
-          <button hx-get="/business" hx-target="#business-analytics-content" hx-swap="innerHTML" hx-trigger="click" class="btn btn-secondary" hx-indicator="#business-spinner">
-            Load Business Analytics
-          </button>
-          <span id="business-spinner" class="htmx-indicator loading loading-spinner ml-2"></span>
-          {{ else }}
-          <button hx-get="/auth/google/login" hx-target="body" hx-swap="outerHTML" hx-push-url="true" class="btn btn-secondary" hx-indicator="#business-auth-spinner">
-            Authenticate for Business Analytics
-          </button>
-          <span id="business-auth-spinner" class="htmx-indicator loading loading-spinner ml-2"></span>
-          {{ end }}
-        </div>
-      </div>
-    </section>
+  <!-- Call to Action (Authentication) Section -->
+  <section id="cta" class="py-20 bg-base-100">
+    <div class="container mx-auto px-4 text-center">
+      <h2 class="text-4xl font-bold mb-4">Ready to Get Started?</h2>
+      <p class="text-lg mb-8 max-w-2xl mx-auto">Authenticate with your Google account to securely access your YouTube analytics. It's fast, easy, and free.</p>
+      {{ if not .UserID }}
+      <button hx-get="/auth/google/login" hx-target="body" hx-swap="outerHTML" hx-push-url="true" class="btn btn-primary btn-lg" hx-indicator="#auth-spinner">
+        Authenticate with Google
+      </button>
+      <span id="auth-spinner" class="htmx-indicator loading loading-spinner ml-4"></span>
+      {{ else }}
+      <p class="text-success font-semibold">You are already authenticated. Explore your dashboards!</p>
+      {{ end }}
+    </div>
+  </section>
+</main>
 
-    <!-- Content Creator Analytics Section (DaisyUI Card) -->
-    <section id="creator-section" class="card bg-base-100 shadow-xl"> <!-- DaisyUI Card -->
-      <div class="card-body">
-        <h2 class="card-title">Content Creator Dashboard</h2> <!-- DaisyUI Card Title -->
-        <div id="creator-analytics-content">
-          <p class="mb-4">Access detailed reports for content creators, including video performance and audience insights.</p>
-          {{ if .UserID }}
-          <button hx-get="/creator" hx-target="#creator-analytics-content" hx-swap="innerHTML" hx-trigger="click" class="btn btn-secondary" hx-indicator="#creator-spinner">
-            Load Creator Analytics
-          </button>
-          <span id="creator-spinner" class="htmx-indicator loading loading-spinner ml-2"></span>
-          {{ else }}
-          <button hx-get="/auth/google/login" hx-target="body" hx-swap="outerHTML" hx-push-url="true" class="btn btn-secondary" hx-indicator="#creator-auth-spinner">
-           Authenticate for Creator Analytics
-          </button>
-          <span id="creator-auth-spinner" class="htmx-indicator loading loading-spinner ml-2"></span>
-          {{ end }}
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- DaisyUI Footer -->
-  <footer class="footer footer-center p-6 bg-base-300 text-base-content mt-auto">
-    <aside>
-      <p>&copy; 2025 YouTube Insights App. All rights reserved.</p>
-      <p>Powered by YouTube Data, Analytics, and Reporting APIs.</p>
-    </aside>
-  </footer>
+<!-- Footer -->
+<footer class="footer p-10 bg-base-300 text-base-content">
+  <aside>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-10 h-10 mb-2 fill-current">
+      <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+    </svg>
+    <p class="font-bold">YouTube Insights<br/>Providing reliable tech since 2025</p>
+    <p>&copy; 2025 YouTube Insights. All rights reserved.</p>
+  </aside>
+  <nav>
+    <h6 class="footer-title">Services</h6>
+    <a class="link link-hover">Video Search</a>
+    <a class="link link-hover">Business Analytics</a>
+    <a class="link link-hover">Creator Tools</a>
+  </nav>
+  <nav>
+    <h6 class="footer-title">Legal</h6>
+    <a class="link link-hover">Terms of use</a>
+    <a class="link link-hover">Privacy policy</a>
+    <a class="link link-hover">Cookie policy</a>
+  </nav>
+</footer>
 
 </body>
 </html>
