@@ -92,6 +92,7 @@ func main() {
 	mux.HandleFunc("/auth/google/login", app.handleGoogleLogin)
 	mux.HandleFunc("/auth/google/callback", app.handleGoogleCallback)
 	mux.Handle("/business", app.authMiddleware(http.HandlerFunc(app.handleBusinessAnalytics)))
+	mux.HandleFunc("/sentiment", app.handleSentimentAnalysis)
 	mux.Handle("/creator", app.authMiddleware(http.HandlerFunc(app.handleCreatorAnalytics)))
 
 	log.Println("Server starting on :8080")
@@ -309,6 +310,23 @@ func (a *App) handleBusinessAnalytics(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error executing template: %v", err), http.StatusInternalServerError)
 	}
+}
+
+func (a *App) handleSentimentAnalysis(w http.ResponseWriter, r *http.Request) {
+	videoURL := r.URL.Query().Get("url")
+	if videoURL == "" {
+		http.Error(w, "Query parameter 'url' is required", http.StatusBadRequest)
+		return
+	}
+
+	sentiment, err := a.youtubeService.GetVideoSentiment(videoURL)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error analyzing sentiment: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte(sentiment))
 }
 
 func (a *App) handleCreatorAnalytics(w http.ResponseWriter, r *http.Request) {

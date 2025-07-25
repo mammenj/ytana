@@ -16,6 +16,7 @@ import (
 	"google.golang.org/api/youtube/v3"
 	"google.golang.org/api/youtubeanalytics/v2"
 	"google.golang.org/api/youtubereporting/v1"
+	"google.golang.org/genai"
 )
 
 // Config holds YouTube API specific configuration
@@ -24,12 +25,14 @@ type Config struct {
 	GoogleClientID     string
 	GoogleClientSecret string
 	RedirectURL        string
+	GeminiAPIKey       string
 }
 
 // Service encapsulates the YouTube API services.
 type Service struct {
 	YouTubeAPIKey string
 	OAuthConfig   *oauth2.Config
+	GenaiClient   *genai.Client
 }
 
 // NewConfigFromEnv creates a new Config from environment variables
@@ -43,6 +46,7 @@ func NewConfigFromEnv() (*Config, error) {
 		GoogleClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
 		GoogleClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
 		RedirectURL:        os.Getenv("REDIRECT_URL"),
+		GeminiAPIKey:       os.Getenv("GEMINI_API_KEY"),
 	}
 
 	if conf.YouTubeAPIKey == "" {
@@ -50,6 +54,9 @@ func NewConfigFromEnv() (*Config, error) {
 	}
 	if conf.GoogleClientID == "" || conf.GoogleClientSecret == "" || conf.RedirectURL == "" {
 		return nil, fmt.Errorf("GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, or REDIRECT_URL not set for OAuth")
+	}
+	if conf.GeminiAPIKey == "" {
+		return nil, fmt.Errorf("GEMINI_API_KEY not set in environment variables")
 	}
 
 	return conf, nil
@@ -74,9 +81,19 @@ func NewServiceFromEnv() (*Service, error) {
 		Endpoint: google.Endpoint,
 	}
 
+	ctx := context.Background()
+	genaiClient, err := genai.NewClient(ctx, &genai.ClientConfig{
+		APIKey:  cfg.GeminiAPIKey,
+		Backend: genai.BackendGeminiAPI,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create genai client: %v", err)
+	}
+
 	return &Service{
 		YouTubeAPIKey: cfg.YouTubeAPIKey,
 		OAuthConfig:   oauth2Config,
+		GenaiClient:   genaiClient,
 	}, nil
 }
 
@@ -255,4 +272,28 @@ func getReportTypeIDs(resp *youtubereporting.ListReportTypesResponse) string {
 	}
 	data, _ := json.Marshal(ids)
 	return string(data)
+}
+
+// GetVideoSentiment analyzes the sentiment of a video from a URL.
+func (s *Service) GetVideoSentiment(url string) (string, error) {
+	ctx := context.Background()
+	parts := []*genai.Part{
+		genai.NewPartFromText("Please provide the sentiment on scale of 1 to 5, 5 being the most postive and summarize in one or two sentence."),
+		genai.NewPartFromURI(url, "video/mp4"),
+	}
+
+	contents := []*genai.Content{
+		genai.NewContentFromParts(parts, genai.RoleUser),
+	}
+
+	result, _ := s.GenaiClient.Models.GenerateContent(
+		ctx,
+		"gemini-2.5-flash",
+		contents,
+		nil,
+	)
+	sentiment := result.Text()
+	log.Printf("Sentiment analysis result: %s", sentiment)
+
+	return sentiment, nil
 }
