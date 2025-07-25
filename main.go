@@ -155,6 +155,7 @@ func (a *App) handleYouTubeSearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html")
+	log.Printf("handleYouTubeSearch: Found %d results for query '%s'", len(response.Items), query)
 	err = a.templates.ExecuteTemplate(w, "search_results.html", response)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error executing template: %v", err), http.StatusInternalServerError)
@@ -329,4 +330,3 @@ func (a *App) handleCreatorAnalytics(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Error executing template: %v", err), http.StatusInternalServerError)
 	}
 }
-

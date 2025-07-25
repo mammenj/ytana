@@ -91,7 +91,7 @@ func (s *Service) SearchVideos(query string) (*youtube.SearchListResponse, error
 	call := service.Search.List([]string{"id", "snippet"}).
 		Q(query).
 		MaxResults(10).
-		Type("video")
+		Type("video").Order("viewCount")
 
 	return call.Do()
 }
