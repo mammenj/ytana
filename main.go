@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
@@ -13,29 +12,22 @@ import (
 
 	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
-	"google.golang.org/api/option"
-	"google.golang.org/api/youtube/v3"
-	"google.golang.org/api/youtubeanalytics/v2"
-	"google.golang.org/api/youtubereporting/v1"
+	
 	_ "modernc.org/sqlite"
+	"github.com/mammenj/ytana/youtubeapi"
 )
 
 // Config holds application configuration from environment variables
 type Config struct {
-	YouTubeAPIKey      string
-	GoogleClientID     string
-	GoogleClientSecret string
-	RedirectURL        string
-	DatabasePath       string
+	DatabasePath string
 }
 
 // App holds the application's dependencies
 type App struct {
-	db           *sql.DB
-	conf         *Config
-	oauth2Config *oauth2.Config
-	templates    *template.Template
+	db             *sql.DB
+	conf           *Config
+	templates      *template.Template
+	youtubeService *youtubeapi.Service
 }
 
 // Token represents an OAuth token stored in the database
@@ -60,19 +52,9 @@ func NewConfig() (*Config, error) {
 	}
 
 	conf := &Config{
-		YouTubeAPIKey:      os.Getenv("YOUTUBE_API_KEY"),
-		GoogleClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
-		GoogleClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
-		RedirectURL:        os.Getenv("REDIRECT_URL"),
-		DatabasePath:       os.Getenv("DATABASE_PATH"),
+		DatabasePath: os.Getenv("DATABASE_PATH"),
 	}
 
-	if conf.YouTubeAPIKey == "" {
-		return nil, fmt.Errorf("YOUTUBE_API_KEY not set in environment variables")
-	}
-	if conf.GoogleClientID == "" || conf.GoogleClientSecret == "" || conf.RedirectURL == "" {
-		return nil, fmt.Errorf("GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, or REDIRECT_URL not set for OAuth")
-	}
 	if conf.DatabasePath == "" {
 		conf.DatabasePath = "./youtube_app.db" // Default database path
 	}
@@ -105,19 +87,12 @@ func NewApp() (*App, error) {
 		return nil, fmt.Errorf("error creating tokens table: %v", err)
 	}
 
-	oauth2Config := &oauth2.Config{
-		ClientID:     conf.GoogleClientID,
-		ClientSecret: conf.GoogleClientSecret,
-		RedirectURL:  conf.RedirectURL,
-		Scopes: []string{
-			youtubeanalytics.YtAnalyticsReadonlyScope,
-			"https://www.googleapis.com/auth/yt-analytics.readonly",
-			youtube.YoutubeReadonlyScope,
-		},
-		Endpoint: google.Endpoint,
+	youtubeService, err := youtubeapi.NewServiceFromEnv()
+	if err != nil {
+		return nil, fmt.Errorf("error creating youtube service: %v", err)
 	}
 
-	templates, err := template.ParseFiles("index.html", "search_results.html", "analytics_table.html", "creator_analytics.html")
+	templates, err := template.ParseGlob("templates/*.html")
 	if err != nil {
 		return nil, fmt.Errorf("error parsing templates: %v", err)
 	}
@@ -125,10 +100,10 @@ func NewApp() (*App, error) {
 	log.Printf("Database initialized at %s", conf.DatabasePath)
 
 	return &App{
-		db:           db,
-		conf:         conf,
-		oauth2Config: oauth2Config,
-		templates:    templates,
+		db:             db,
+		conf:           conf,
+		templates:      templates,
+		youtubeService: youtubeService,
 	}, nil
 }
 
@@ -200,19 +175,7 @@ func (a *App) handleYouTubeSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := context.Background()
-	service, err := youtube.NewService(ctx, option.WithAPIKey(a.conf.YouTubeAPIKey))
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Error creating YouTube service: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	call := service.Search.List([]string{"id", "snippet"}).
-		Q(query).
-		MaxResults(10).
-		Type("video")
-
-	response, err := call.Do()
+	response, err := a.youtubeService.SearchVideos(query)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error searching YouTube: %v", err), http.StatusInternalServerError)
 		return
@@ -237,7 +200,7 @@ func (a *App) handleGoogleLogin(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 	})
 
-	url := a.oauth2Config.AuthCodeURL(state, oauth2.AccessTypeOffline, oauth2.SetAuthURLParam("prompt", "consent"))
+	url := a.youtubeService.OAuthConfig.AuthCodeURL(state, oauth2.AccessTypeOffline, oauth2.SetAuthURLParam("prompt", "consent"))
 	log.Printf("Redirecting to Google for OAuth: %s", url)
 	w.Header().Set("HX-Redirect", url)
 	w.WriteHeader(http.StatusOK)
@@ -269,7 +232,7 @@ func (a *App) handleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println("handleGoogleCallback: Authorization code received.")
 
-	token, err := a.oauth2Config.Exchange(context.Background(), code)
+	token, err := a.youtubeService.OAuthConfig.Exchange(context.Background(), code)
 	if err != nil {
 		log.Printf("handleGoogleCallback: Error exchanging code for token: %v", err)
 		http.Error(w, "Failed to exchange code for token", http.StatusInternalServerError)
@@ -277,33 +240,13 @@ func (a *App) handleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println("handleGoogleCallback: Token exchange successful.")
 
-	oauthClient := a.oauth2Config.Client(context.Background(), token)
-	youtubeService, err := youtube.NewService(context.Background(), option.WithHTTPClient(oauthClient))
+	authenticatedUserID, err := a.youtubeService.GetAuthenticatedUserChannelID(token)
 	if err != nil {
-		log.Printf("handleGoogleCallback: Error creating YouTube service: %v", err)
-		http.Error(w, "Failed to create YouTube service", http.StatusInternalServerError)
+		log.Printf("handleGoogleCallback: Error getting user channel ID: %v", err)
+		http.Error(w, "Failed to get user channel ID", http.StatusInternalServerError)
 		return
 	}
-	log.Println("handleGoogleCallback: YouTube service created for channel ID retrieval.")
-
-	channelsCall := youtubeService.Channels.List([]string{"id"}).Mine(true)
-	channelsResp, err := channelsCall.Do()
-	if err != nil {
-		log.Printf("handleGoogleCallback: Error fetching user's channel ID: %v", err)
-		http.Error(w, "Failed to fetch user's channel ID", http.StatusInternalServerError)
-		return
-	}
-	log.Println("handleGoogleCallback: Channel list call executed.")
-
-	var authenticatedUserID string
-	if len(channelsResp.Items) > 0 {
-		authenticatedUserID = channelsResp.Items[0].Id
-		log.Printf("handleGoogleCallback: Successfully fetched authenticated user's YouTube Channel ID: %s", authenticatedUserID)
-	} else {
-		log.Println("handleGoogleCallback: No YouTube channel found for the authenticated user.")
-		http.Error(w, "No YouTube channel found for the authenticated user.", http.StatusBadRequest)
-		return
-	}
+	log.Printf("handleGoogleCallback: Successfully fetched authenticated user's YouTube Channel ID: %s", authenticatedUserID)
 
 	err = a.saveToken(authenticatedUserID, token)
 	if err != nil {
@@ -388,7 +331,7 @@ func (a *App) getAuthenticatedClient(userID string) (*http.Client, error) {
 	log.Printf("getAuthenticatedClient: Initial token for user %s: AccessToken length %d, RefreshToken present: %t, Expired: %t",
 		userID, len(token.AccessToken), token.RefreshToken != "", !token.Valid())
 
-	tokenSource := a.oauth2Config.TokenSource(context.Background(), token)
+	tokenSource := a.youtubeService.OAuthConfig.TokenSource(context.Background(), token)
 	newToken, err := tokenSource.Token()
 	if err != nil {
 		log.Printf("getAuthenticatedClient: Failed to get fresh token (or refresh failed) for user %s: %v", userID, err)
@@ -421,26 +364,7 @@ func (a *App) handleBusinessAnalytics(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("handleBusinessAnalytics: Handling request for user %s (from context)", userID)
 
-	analyticsService, err := youtubeanalytics.NewService(context.Background(), option.WithHTTPClient(client))
-	if err != nil {
-		log.Printf("handleBusinessAnalytics: Error creating YouTube Analytics service: %v", err)
-		http.Error(w, fmt.Sprintf("Error creating YouTube Analytics service: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	channelID := "channel==MINE"
-	endDate := time.Now().Format("2006-01-02")
-	startDate := time.Now().AddDate(0, 0, -30).Format("2006-01-02")
-
-	call := analyticsService.Reports.Query().
-		Ids(channelID).
-		StartDate(startDate).
-		EndDate(endDate).
-		Metrics("views,subscribersGained").
-		Dimensions("day").
-		Sort("day")
-
-	response, err := call.Do()
+	response, err := a.youtubeService.GetBusinessAnalytics(client)
 	if err != nil {
 		log.Printf("handleBusinessAnalytics: Error fetching business analytics for user %s: %v", userID, err)
 		http.Error(w, fmt.Sprintf("Error fetching business analytics: %v", err), http.StatusInternalServerError)
@@ -454,125 +378,17 @@ func (a *App) handleBusinessAnalytics(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type CreatorAnalyticsData struct {
-	Reports     []*youtubereporting.Report
-	ReportLinks []struct {
-		URL       string
-		ID        string
-		StartDate string
-		EndDate   string
-	}
-}
-
 func (a *App) handleCreatorAnalytics(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(string)
 	client := r.Context().Value("authenticated_client").(*http.Client)
 
 	log.Printf("handleCreatorAnalytics: Handling request for user %s (from context)", userID)
 
-	reportingService, err := youtubereporting.NewService(context.Background(), option.WithHTTPClient(client))
+	data, err := a.youtubeService.GetCreatorAnalytics(client, userID)
 	if err != nil {
-		log.Printf("handleCreatorAnalytics: Error creating YouTube Reporting service: %v", err)
-		http.Error(w, fmt.Sprintf("Error creating YouTube Reporting service: %v", err), http.StatusInternalServerError)
+		log.Printf("handleCreatorAnalytics: Error fetching creator analytics for user %s: %v", userID, err)
+		http.Error(w, fmt.Sprintf("Error fetching creator analytics: %v", err), http.StatusInternalServerError)
 		return
-	}
-
-	reportTypesCall := reportingService.ReportTypes.List()
-	reportTypesResp, err := reportTypesCall.Do()
-	if err != nil {
-		log.Printf("handleCreatorAnalytics: Error listing report types for user %s: %v", userID, err)
-		http.Error(w, fmt.Sprintf("Error listing report types: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	log.Printf("handleCreatorAnalytics: Available report types for user %s:", userID)
-	for _, rt := range reportTypesResp.ReportTypes {
-		log.Printf("  - ID: %s, Name: %s", rt.Id, rt.Name)
-	}
-
-	var desiredReportTypeID string
-	for _, rt := range reportTypesResp.ReportTypes {
-		if rt.Id == "channel_basic_a2" {
-			desiredReportTypeID = rt.Id
-			break
-		}
-	}
-
-	if desiredReportTypeID == "" {
-		log.Printf("handleCreatorAnalytics: Could not find desired report type 'channel_basic_a2' for user %s. Available types: %s", userID, getReportTypeIDs(reportTypesResp))
-		http.Error(w, "Could not find a suitable report type (e.g., 'channel_basic_a2'). Ensure your channel has reporting jobs enabled or is eligible for this report type. Check server logs for available types.", http.StatusInternalServerError)
-		return
-	}
-
-	jobsCall := reportingService.Jobs.List().OnBehalfOfContentOwner(userID)
-	jobsResp, err := jobsCall.Do()
-	if err != nil {
-		log.Printf("handleCreatorAnalytics: Error listing reporting jobs for user %s: %v", userID, err)
-		http.Error(w, fmt.Sprintf("Error listing reporting jobs: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	var jobID string
-	for _, job := range jobsResp.Jobs {
-		if job.ReportTypeId == desiredReportTypeID {
-			jobID = job.Id
-			log.Printf("handleCreatorAnalytics: Found existing reporting job: %s for user %s", jobID, userID)
-			break
-		}
-	}
-
-	if jobID == "" {
-		newJob := &youtubereporting.Job{
-			ReportTypeId: desiredReportTypeID,
-			Name:         "MyChannelBasicReport",
-		}
-		createJobCall := reportingService.Jobs.Create(newJob)
-		createdJob, err := createJobCall.Do()
-		if err != nil {
-			log.Printf("handleCreatorAnalytics: Error creating reporting job for user %s: %v", userID, err)
-			http.Error(w, fmt.Sprintf("Error creating reporting job: %v", err), http.StatusInternalServerError)
-			return
-		}
-		jobID = createdJob.Id
-		log.Printf("handleCreatorAnalytics: Created new reporting job: %s for user %s", jobID, userID)
-	}
-
-	reportsCall := reportingService.Jobs.Reports.List(jobID).
-		CreatedAfter(time.Now().AddDate(0, 0, -7).Format(time.RFC3339))
-
-	reportsResp, err := reportsCall.Do()
-	if err != nil {
-		log.Printf("handleCreatorAnalytics: Error listing reports for job %s (user %s): %v", jobID, userID, err)
-		http.Error(w, fmt.Sprintf("Error listing reports for job %s: %v", jobID, err), http.StatusInternalServerError)
-		return
-	}
-
-	data := CreatorAnalyticsData{
-		Reports: reportsResp.Reports,
-	}
-
-	for _, report := range reportsResp.Reports {
-		parsedStartTime, err := time.Parse(time.RFC3339, report.StartTime)
-		if err != nil {
-			log.Printf("handleCreatorAnalytics: Error parsing report StartTime '%s': %v", report.StartTime, err)
-			parsedStartTime = time.Time{}
-		}
-		parsedEndTime, err := time.Parse(time.RFC3339, report.EndTime)
-		if err != nil {
-			log.Printf("handleCreatorAnalytics: Error parsing report EndTime '%s': %v", report.EndTime, err)
-			parsedEndTime = time.Time{}
-		}
-		data.ReportLinks = append(data.ReportLinks, struct {
-			URL       string
-			ID        string
-			StartDate string
-			EndDate   string
-		}{
-			URL:       report.DownloadUrl,
-			ID:        report.Id,
-			StartDate: parsedStartTime.Format("2006-01-02"),
-			EndDate:   parsedEndTime.Format("2006-01-02"),
-		})
 	}
 
 	w.Header().Set("Content-Type", "text/html")
@@ -580,13 +396,4 @@ func (a *App) handleCreatorAnalytics(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error executing template: %v", err), http.StatusInternalServerError)
 	}
-}
-
-func getReportTypeIDs(resp *youtubereporting.ListReportTypesResponse) string {
-	ids := []string{}
-	for _, rt := range resp.ReportTypes {
-		ids = append(ids, rt.Id)
-	}
-	data, _ := json.Marshal(ids)
-	return string(data)
 }
