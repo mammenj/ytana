@@ -25,6 +25,13 @@
     <ul class="menu menu-horizontal px-1 space-x-2 hidden lg:flex">
       <li><a href="#features" class="btn btn-ghost">Features</a></li>
       <li><a href="#cta" class="btn btn-ghost">Get Started</a></li>
+      <li>
+        <label class="swap swap-rotate btn btn-ghost btn-circle">
+          <input type="checkbox" id="theme-toggle"/>
+          <svg class="swap-off fill-current w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5.64,17l-.71.71a1,1,0,0,0,0,1.41,1,1,0,0,0,1.41,0l.71-.71A1,1,0,0,0,5.64,17ZM5,12a1,1,0,0,0-1-1H3a1,1,0,0,0,0,2H4A1,1,0,0,0,5,12Zm7-7H12a1,1,0,0,0,0,2h1a1,1,0,0,0,0-2ZM17,18.36l.71.71a1,1,0,0,0,1.41,0,1,1,0,0,0,0-1.41l-.71-.71A1,1,0,0,0,17,18.36ZM18.36,5.64l.71-.71a1,1,0,0,0-1.41-1.41l-.71.71A1,1,0,0,0,18.36,5.64ZM12,6.5A5.5,5.5,0,1,0,17.5,12,5.51,5.01,0,0,0,12,6.5Zm0,9A3.5,3.5,0,1,1,15.5,12,3.5,3.5,0,0,1,12,15.5Z"/></svg>
+          <svg class="swap-on fill-current w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.64,13a1,1,0,0,0-1.05-.14,8.05,8.05,0,0,1-11.83,7.94,1,1,0,0,0-.62.91v.07A1,1,0,0,0,4.5,22.18a10.87,10.87,0,0,0,15.55-15.55,1,1,0,0,0-.14-1.05Z"/></svg>
+        </label>
+      </li>
     </ul>
     <div class="dropdown dropdown-end lg:hidden">
       <label tabindex="0" class="btn btn-ghost rounded-btn">
@@ -41,7 +48,7 @@
 <!-- Main Content -->
 <main class="flex-grow">
   <!-- Hero Section -->
-  <section class="hero min-h-[60vh] bg-base-100 text-center">
+  <section class="hero min-h-[50vh] bg-base-100 text-center">
     <div class="hero-content">
       <div>
         <h1 class="text-5xl font-bold leading-tight">Unlock Your YouTube Potential</h1>
@@ -148,7 +155,7 @@
 </main>
 
 <!-- Footer -->
-<footer class="footer p-10 bg-base-300 text-base-content">
+<footer class="footer p-10 bg-base-300 text-base-content footer-center md:grid-flow-col gap-4 rounded">
   <aside>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-10 h-10 mb-2 fill-current">
       <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
@@ -170,5 +177,32 @@
   </nav>
 </footer>
 
+  <script>
+    const themeToggle = document.getElementById('theme-toggle');
+    const htmlElement = document.documentElement;
+
+    // Set initial theme based on local storage or system preference
+    const currentTheme = localStorage.getItem('theme');
+    if (currentTheme) {
+      htmlElement.setAttribute('data-theme', currentTheme);
+      themeToggle.checked = (currentTheme === 'dark');
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      htmlElement.setAttribute('data-theme', 'dark');
+      themeToggle.checked = true;
+    } else {
+      htmlElement.setAttribute('data-theme', 'light');
+      themeToggle.checked = false;
+    }
+
+    themeToggle.addEventListener('change', () => {
+      if (themeToggle.checked) {
+        htmlElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        htmlElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      }
+    });
+  </script>
 </body>
 </html>

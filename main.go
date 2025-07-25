@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"html/template"
 	"log"
@@ -12,8 +11,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
-	
-	_ "modernc.org/sqlite"
+	"github.com/mammenj/ytana/db"
 	"github.com/mammenj/ytana/youtubeapi"
 )
 
@@ -24,20 +22,10 @@ type Config struct {
 
 // App holds the application's dependencies
 type App struct {
-	db             *sql.DB
+	db             *db.DB
 	conf           *Config
 	templates      *template.Template
 	youtubeService *youtubeapi.Service
-}
-
-// Token represents an OAuth token stored in the database
-type Token struct {
-	ID           int
-	UserID       string
-	AccessToken  string
-	RefreshToken string
-	Expiry       time.Time
-	TokenType    string
 }
 
 // TemplateData struct to pass data to the HTML template
@@ -69,22 +57,9 @@ func NewApp() (*App, error) {
 		return nil, err
 	}
 
-	db, err := sql.Open("sqlite", conf.DatabasePath)
+	db, err := db.NewDB(conf.DatabasePath)
 	if err != nil {
-		return nil, fmt.Errorf("error opening database: %v", err)
-	}
-
-	createTableSQL := `
-	CREATE TABLE IF NOT EXISTS tokens (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		user_id TEXT NOT NULL UNIQUE,
-		access_token TEXT NOT NULL,
-		refresh_token TEXT,
-		expiry DATETIME NOT NULL,
-		token_type TEXT NOT NULL
-	);`
-	if _, err := db.Exec(createTableSQL); err != nil {
-		return nil, fmt.Errorf("error creating tokens table: %v", err)
+		return nil, fmt.Errorf("error initializing database: %v", err)
 	}
 
 	youtubeService, err := youtubeapi.NewServiceFromEnv()
@@ -96,8 +71,6 @@ func NewApp() (*App, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error parsing templates: %v", err)
 	}
-
-	log.Printf("Database initialized at %s", conf.DatabasePath)
 
 	return &App{
 		db:             db,
@@ -248,7 +221,7 @@ func (a *App) handleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("handleGoogleCallback: Successfully fetched authenticated user's YouTube Channel ID: %s", authenticatedUserID)
 
-	err = a.saveToken(authenticatedUserID, token)
+	err = a.db.SaveToken(authenticatedUserID, token)
 	if err != nil {
 		log.Printf("handleGoogleCallback: Error saving token: %v", err)
 		http.Error(w, fmt.Sprintf("Error saving token: %v", err), http.StatusInternalServerError)
@@ -271,54 +244,13 @@ func (a *App) handleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	log.Println("handleGoogleCallback: Redirecting to /.")
 }
 
-func (a *App) getToken(userID string) (*oauth2.Token, error) {
-	row := a.db.QueryRow("SELECT access_token, refresh_token, expiry, token_type FROM tokens WHERE user_id = ?", userID)
-	var accessToken, refreshToken, tokenType string
-	var expiry time.Time
-	err := row.Scan(&accessToken, &refreshToken, &expiry, &tokenType)
-	if err == sql.ErrNoRows {
-		log.Printf("getToken: No token found in DB for user %s", userID)
-		return nil, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("getToken: error scanning token from DB: %v", err)
-	}
-
-	log.Printf("getToken: Retrieved token from DB for user %s. Expiry: %s, RefreshToken present: %t", userID, expiry.String(), refreshToken != "")
-	return &oauth2.Token{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		Expiry:       expiry,
-		TokenType:    tokenType,
-	}, nil
-}
-
-func (a *App) saveToken(userID string, token *oauth2.Token) error {
-	_, err := a.db.Exec(`
-		INSERT INTO tokens (user_id, access_token, refresh_token, expiry, token_type)
-		VALUES (?, ?, ?, ?, ?)
-		ON CONFLICT(user_id) DO UPDATE SET
-			access_token = EXCLUDED.access_token,
-			refresh_token = EXCLUDED.refresh_token,
-			expiry = EXCLUDED.expiry,
-			token_type = EXCLUDED.token_type;
-	`, userID, token.AccessToken, token.RefreshToken, token.Expiry, token.TokenType)
-	if err != nil {
-		log.Printf("saveToken: Error saving token for user %s: %v", userID, err)
-	} else {
-		log.Printf("saveToken: Token saved/updated for user %s. AccessToken length: %d, RefreshToken present: %t, Expiry: %s",
-			userID, len(token.AccessToken), token.RefreshToken != "", token.Expiry.String())
-	}
-	return err
-}
-
 func (a *App) getAuthenticatedClient(userID string) (*http.Client, error) {
 	if userID == "" {
 		log.Println("getAuthenticatedClient: UserID is empty. Authentication required.")
 		return nil, fmt.Errorf("userID is empty. Authentication required")
 	}
 	log.Printf("getAuthenticatedClient: Attempting to get authenticated client for user %s", userID)
-	token, err := a.getToken(userID)
+	token, err := a.db.GetToken(userID)
 	if err != nil {
 		log.Printf("getAuthenticatedClient: Failed to get token for user %s: %v", userID, err)
 		return nil, fmt.Errorf("failed to get token: %v", err)
@@ -340,7 +272,7 @@ func (a *App) getAuthenticatedClient(userID string) (*http.Client, error) {
 
 	if newToken.AccessToken != token.AccessToken {
 		log.Printf("getAuthenticatedClient: Token refreshed for user %s. Saving new token.", userID)
-		if err := a.saveToken(userID, newToken); err != nil {
+		if err := a.db.SaveToken(userID, newToken); err != nil {
 			log.Printf("getAuthenticatedClient: Warning: Failed to save refreshed token for user %s: %v", userID, err)
 		}
 	} else {
