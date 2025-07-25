@@ -170,7 +170,7 @@ func (s *Service) GetCreatorAnalytics(client *http.Client, userID string) (*Crea
 
 	var desiredReportTypeID string
 	for _, rt := range reportTypesResp.ReportTypes {
-		if rt.Id == "channel_basic_a2" {
+		if rt.Id == "channel_basic_a3" {
 			desiredReportTypeID = rt.Id
 			break
 		}
