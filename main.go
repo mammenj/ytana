@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"golang.org/x/oauth2"
 	"github.com/mammenj/ytana/db"
 	"github.com/mammenj/ytana/youtubeapi"
+	"golang.org/x/oauth2"
 )
 
 // Config holds application configuration from environment variables
@@ -86,16 +86,16 @@ func main() {
 		log.Fatalf("Failed to initialize application: %v", err)
 	}
 	defer app.db.Close()
-
-	http.HandleFunc("/", app.serveIndex)
-	http.HandleFunc("/search", app.handleYouTubeSearch)
-	http.HandleFunc("/auth/google/login", app.handleGoogleLogin)
-	http.HandleFunc("/auth/google/callback", app.handleGoogleCallback)
-	http.Handle("/business", app.authMiddleware(http.HandlerFunc(app.handleBusinessAnalytics)))
-	http.Handle("/creator", app.authMiddleware(http.HandlerFunc(app.handleCreatorAnalytics)))
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", app.serveIndex)
+	mux.HandleFunc("/search", app.handleYouTubeSearch)
+	mux.HandleFunc("/auth/google/login", app.handleGoogleLogin)
+	mux.HandleFunc("/auth/google/callback", app.handleGoogleCallback)
+	mux.Handle("/business", app.authMiddleware(http.HandlerFunc(app.handleBusinessAnalytics)))
+	mux.Handle("/creator", app.authMiddleware(http.HandlerFunc(app.handleCreatorAnalytics)))
 
 	log.Println("Server starting on :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":8080", mux))
 }
 
 func (a *App) authMiddleware(next http.Handler) http.Handler {
@@ -329,3 +329,4 @@ func (a *App) handleCreatorAnalytics(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Error executing template: %v", err), http.StatusInternalServerError)
 	}
 }
+
