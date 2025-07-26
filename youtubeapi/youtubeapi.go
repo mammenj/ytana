@@ -275,8 +275,8 @@ func getReportTypeIDs(resp *youtubereporting.ListReportTypesResponse) string {
 }
 
 // GetVideoSentiment analyzes the sentiment of a video from a URL.
-func (s *Service) GetVideoSentiment(url string) (string, error) {
-	ctx := context.Background()
+func (s *Service) GetVideoSentiment(ctx context.Context, url string) (string, error) {
+	// ctx := context.Background()
 	parts := []*genai.Part{
 		genai.NewPartFromText("Please provide the sentiment on scale of 1 to 5, 5 being the most postive and summarize in one or two sentence."),
 		genai.NewPartFromURI(url, "video/mp4"),
@@ -292,6 +292,15 @@ func (s *Service) GetVideoSentiment(url string) (string, error) {
 		contents,
 		nil,
 	)
+	//	sentiment := result.Text()
+	// log.Printf("Sentiment analysis result: %s", sentiment)
+
+	/////
+
+	if result == nil {
+		return "", fmt.Errorf("received an empty response from the sentiment analysis model")
+	}
+
 	sentiment := result.Text()
 	log.Printf("Sentiment analysis result: %s", sentiment)
 

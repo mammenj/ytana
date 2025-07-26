@@ -41,8 +41,17 @@ func (h *Handlers) HandleSentimentAnalysis(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	sentiment, err := h.youtubeService.GetVideoSentiment(videoURL)
+	ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
+	defer cancel()
+
+	sentiment, err := h.youtubeService.GetVideoSentiment(ctx, videoURL)
 	if err != nil {
+		log.Printf("Error analyzing sentiment: %v", err)
+		// Check if the error is due to context cancellation
+		if ctx.Err() == context.DeadlineExceeded {
+			http.Error(w, "Sentiment analysis timed out", http.StatusRequestTimeout)
+			return
+		}
 		http.Error(w, fmt.Sprintf("Error analyzing sentiment: %v", err), http.StatusInternalServerError)
 		return
 	}
