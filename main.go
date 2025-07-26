@@ -60,7 +60,7 @@ func NewApp() (*App, error) {
 		return nil, fmt.Errorf("error creating youtube service: %v", err)
 	}
 
-	templates, err := template.ParseGlob("*.html")
+	templates, err := template.ParseGlob("templates/*.html")
 	if err != nil {
 		return nil, fmt.Errorf("error parsing templates: %v", err)
 	}
@@ -89,6 +89,7 @@ func main() {
 	mux.HandleFunc("/auth/google/callback", h.HandleGoogleCallback)
 	mux.Handle("/business", h.AuthMiddleware(http.HandlerFunc(h.HandleBusinessAnalytics)))
 	mux.Handle("/creator", h.AuthMiddleware(http.HandlerFunc(h.HandleCreatorAnalytics)))
+	mux.HandleFunc("/sentiment", h.HandleSentimentAnalysis)
 
 	log.Println("Server starting on :8080")
 	log.Fatal(http.ListenAndServe(":8080", mux))

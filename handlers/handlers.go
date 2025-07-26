@@ -34,6 +34,23 @@ type TemplateData struct {
 	UserID string
 }
 
+func (h *Handlers) HandleSentimentAnalysis(w http.ResponseWriter, r *http.Request) {
+	videoURL := r.URL.Query().Get("url")
+	if videoURL == "" {
+		http.Error(w, "Query parameter 'url' is required", http.StatusBadRequest)
+		return
+	}
+
+	sentiment, err := h.youtubeService.GetVideoSentiment(videoURL)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error analyzing sentiment: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte(sentiment))
+}
+
 func (h *Handlers) AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userID, err := getUserIDFromCookie(r)
