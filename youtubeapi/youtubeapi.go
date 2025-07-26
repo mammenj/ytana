@@ -286,16 +286,15 @@ func (s *Service) GetVideoSentiment(ctx context.Context, url string) (string, er
 		genai.NewContentFromParts(parts, genai.RoleUser),
 	}
 
-	result, _ := s.GenaiClient.Models.GenerateContent(
+	result, err := s.GenaiClient.Models.GenerateContent(
 		ctx,
 		"gemini-2.5-flash",
 		contents,
 		nil,
 	)
-	//	sentiment := result.Text()
-	// log.Printf("Sentiment analysis result: %s", sentiment)
-
-	/////
+	if err != nil {
+		return "", err
+	}
 
 	if result == nil {
 		return "", fmt.Errorf("received an empty response from the sentiment analysis model")
