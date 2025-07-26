@@ -50,10 +50,10 @@ func (h *Handlers) HandleSentimentAnalysis(w http.ResponseWriter, r *http.Reques
 		// Check if the error is due to context cancellation
 		if ctx.Err() == context.DeadlineExceeded {
 			http.Error(w, "Sentiment analysis timed out", http.StatusRequestTimeout)
-			return
+			sentiment = "Sentiment analysis timed out: " + ctx.Err().Error()
+		} else {
+			sentiment = err.Error()
 		}
-		http.Error(w, fmt.Sprintf("Error analyzing sentiment: %v", err), http.StatusInternalServerError)
-		return
 	}
 
 	w.Header().Set("Content-Type", "text/plain")
@@ -292,3 +292,4 @@ func (h *Handlers) HandleCreatorAnalytics(w http.ResponseWriter, r *http.Request
 		http.Error(w, fmt.Sprintf("Error executing template: %v", err), http.StatusInternalServerError)
 	}
 }
+
